@@ -35,14 +35,14 @@ namespace ParcelPartitioning.API.Controllers
 
         [HttpPut]
         [Route("AddParcel")]
-        public ResponseModel AddParcel(ParcelModel request)
+        public ResponseModel AddParcel([FromBody] ParcelModel request)
         {
             return RunTransaction(AddParcelWorkload, request);
         }
 
         [HttpPost]
         [Route("UpdateParcel")]
-        public ResponseModel UpdateParcel(ParcelModel request)
+        public ResponseModel UpdateParcel([FromBody] ParcelModel request)
         {
             ResponseModel response = new ResponseModel()
             {
@@ -72,6 +72,13 @@ namespace ParcelPartitioning.API.Controllers
             return RunTransaction(UpdateParcelWorkload, request);
         }
 
+        [HttpDelete]
+        [Route("DeleteParcel")]
+        public ResponseModel DeleteParcel(long request)
+        {
+            return RunTransaction(DeleteParcelWorkload, request);
+        }
+
         [HttpPost]
         [Route("SetPartCount")]
         public ResponseModel SetPartCount([FromBody] SetParcelPartCountRequest request)
@@ -90,7 +97,7 @@ namespace ParcelPartitioning.API.Controllers
             }
 
             var existingParcel = GetExistingParcel(request.ParcelId, false);
-            if(existingParcel == null)
+            if (existingParcel == null)
             {
                 response.Message += "Parcel id not found.\n";
                 return response;
@@ -121,7 +128,7 @@ namespace ParcelPartitioning.API.Controllers
             ParcelCostReportResponse response = new ParcelCostReportResponse();
             response.parcelPartitions = partitions;
             response.totalCost = 0;
-            foreach(ParcelPartition item in partitions)
+            foreach (ParcelPartition item in partitions)
             {
                 response.totalCost += item.PartCost;
             }
@@ -199,6 +206,17 @@ namespace ParcelPartitioning.API.Controllers
 
             _session.Update(existingParcel);
         }
+        private void DeleteParcelWorkload(long parcelId)
+        {
+            var parcel = GetExistingParcel(parcelId);
+
+            foreach (var parcelPartition in parcel.ParcelPartition)
+            {
+                _session.Delete(parcelPartition);
+            }
+
+            _session.Delete(parcel);
+        }
         private List<ParcelPartition> CalculateParcelPartitions(Parcel parcel)
         {
             List<ParcelPartition> ret = new List<ParcelPartition>();
@@ -230,6 +248,6 @@ namespace ParcelPartitioning.API.Controllers
             }
             return existingParcel;
         }
-        
+
     }
 }
